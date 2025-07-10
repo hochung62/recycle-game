@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>재활용 분리배출 게임</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f2f2f2;
+      text-align: center;
+    }
+
+    #info {
+      font-size: 1.2em;
+      margin: 10px;
+    }
+
+    #gameArea {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px;
+    }
+
+    .bin {
+      width: 90px;
+      height: 120px;
+      border: 2px dashed #888;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .bin img {
+      width: 80%;
+      height: 80px;
+      object-fit: contain;
+    }
+
+    .trash {
+      width: 100px;
+      height: 110px;
+      margin: 20px auto;
+      touch-action: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .trash img {
+      width: 100%;
+      height: 80px;
+      object-fit: contain;
+    }
+
+    .trash-label {
+      margin-top: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <span id="score">점수: 0</span> |
+    <span id="timer">남은 시간: 60초</span>
+  </div>
+
+  <div id="gameArea">
+    <div class="bin" data-type="플라스틱">
+      <img src="bin.png" alt="플라스틱">
+      <div>플라스틱</div>
+    </div>
+    <div class="bin" data-type="종이">
+      <img src="bin.png" alt="종이">
+      <div>종이</div>
+    </div>
+    <div class="bin" data-type="비닐">
+      <img src="bin.png" alt="비닐">
+      <div>비닐</div>
+    </div>
+    <div class="bin" data-type="유리">
+      <img src="bin.png" alt="유리">
+      <div>유리</div>
+    </div>
+    <div class="bin" data-type="일반">
+      <img src="bin.png" alt="일반">
+      <div>일반</div>
+    </div>
+  </div>
+
+  <div id="trash" class="trash" draggable="true">
+    <img id="trashImg" src="" alt="쓰레기 이미지" />
+    <div id="trashLabel" class="trash-label"></div>
+  </div>
+
+  <script>
+    const wasteTypes = ["플라스틱", "종이", "비닐", "유리", "일반"];
+    let currentType = "";
+    let score = 0;
+    let timeLeft = 60;
+
+    const trash = document.getElementById("trash");
+    const trashImg = document.getElementById("trashImg");
+    const trashLabel = document.getElementById("trashLabel");
+    const scoreDisplay = document.getElementById("score");
+    const timerDisplay = document.getElementById("timer");
+
+    function newTrash() {
+      currentType = wasteTypes[Math.floor(Math.random() * wasteTypes.length)];
+      trashImg.src = `${currentType}.png`;
+      trashImg.alt = currentType;
+      trashLabel.innerText = currentType;
+    }
+
+    // PC용 드래그
+    trash.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", currentType);
+    });
+
+    // 모바일 터치 시작
+    trash.addEventListener("touchstart", (e) => {
+      trash.style.position = "absolute";
+    });
+
+    // 모바일 드래그
+    document.addEventListener("touchmove", (e) => {
+      const touch = e.touches[0];
+      trash.style.left = `${touch.clientX - 50}px`;
+      trash.style.top = `${touch.clientY - 40}px`;
+    });
+
+    // 모바일 터치 끝
+    document.addEventListener("touchend", (e) => {
+      const bins = document.querySelectorAll(".bin");
+      const trashRect = trash.getBoundingClientRect();
+
+      bins.forEach(bin => {
+        const binRect = bin.getBoundingClientRect();
+        if (
+          trashRect.left < binRect.right &&
+          trashRect.right > binRect.left &&
+          trashRect.top < binRect.bottom &&
+          trashRect.bottom > binRect.top
+        ) {
+          const binType = bin.dataset.type;
+          if (binType === currentType) {
+            score++;
+          } else {
+            score--;
+          }
+          scoreDisplay.textContent = `점수: ${score}`;
+          resetTrash();
+        }
+      });
+
+      trash.style.position = "static";
+      trash.style.left = "";
+      trash.style.top = "";
+    });
+
+    // PC용 드롭
+    document.querySelectorAll(".bin").forEach(bin => {
+      bin.addEventListener("dragover", e => e.preventDefault());
+      bin.addEventListener("drop", e => {
+        e.preventDefault();
+        const droppedType = e.dataTransfer.getData("text/plain");
+        if (bin.dataset.type === droppedType) {
+          score++;
+        } else {
+          score--;
+        }
+        scoreDisplay.textContent = `점수: ${score}`;
+        resetTrash();
+      });
+    });
+
+    function resetTrash() {
+      newTrash();
+    }
+
+    function startGame() {
+      newTrash();
+      const timer = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = `남은 시간: ${timeLeft}초`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert(`게임 종료! 최종 점수는 ${score}점입니다.`);
+        }
+      }, 1000);
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
